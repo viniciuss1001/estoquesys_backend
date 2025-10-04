@@ -1,0 +1,369 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+
+
+model Account {
+  id                 String    @id @default(cuid())
+  userId             String
+  providerType       String
+  providerId         String
+  providerAccountId  String
+  refreshToken       String?
+  accessToken        String?
+  accessTokenExpires DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  user               User      @relation(fields: [userId], references: [id])
+
+  @@unique([providerId, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  expires      DateTime
+  sessionToken String   @unique
+  accessToken  String   @unique
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id])
+}
+
+model Company {
+  id               String            @id @default(uuid())
+  name             String
+  cnpj             String?           @unique
+  corporateName    String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  AuditLog         AuditLog[]
+  categories       Category[]
+  deliveries       Delivery[]
+  products         Product[]
+  services         Service[]
+  serviceLocations ServiceLocation[]
+  serviceProviders ServiceProvider[]
+  serviceTypes     ServiceType[]
+  stockMovements   StockMovement[]
+  suppliers        Supplier[]
+  supplierInvoices SupplierInvoice[]
+  users            User[]
+  warehouses       WareHouse[]
+}
+
+model User {
+  id                 String              @id @default(cuid())
+  name               String
+  email              String              @unique
+  office             Office              @default(GESTOR)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  emailVerified      DateTime?
+  image              String?
+  password           String
+  department         String?
+  description        String?
+  phone              String?
+  lastLogin          DateTime?
+  companyId          String
+  accounts           Account[]
+  AuditLog           AuditLog[]
+  PasswordResetToken PasswordResetToken?
+  service            Service[]
+  sessions           Session[]
+  company            Company             @relation(fields: [companyId], references: [id])
+}
+
+model Product {
+  id               String             @id @default(uuid())
+  name             String
+  sku              String             @unique
+  quantity         Int
+  price            Float
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  supplierId       String?
+  categoryId       String?
+  minimumStock     Int?               @default(0)
+  unit             UnitType           @default(UNIT)
+  expirationDate   DateTime?
+  usageStatus      UsageStatus        @default(IN_STOCK)
+  companyId        String
+  delivery         Delivery[]
+  category         Category?          @relation(fields: [categoryId], references: [id])
+  company          Company            @relation(fields: [companyId], references: [id])
+  supplier         Supplier?          @relation(fields: [supplierId], references: [id])
+  stockMovements   StockMovement[]
+  warehouseProduct WarehouseProduct[]
+
+  @@unique([companyId, sku])
+}
+
+model WareHouse {
+  id                        String             @id @default(uuid())
+  name                      String
+  location                  String?
+  createdAt                 DateTime           @default(now())
+  updatedAt                 DateTime           @updatedAt
+  description               String?
+  companyId                 String
+  Delivery                  Delivery[]
+  stockMovementsDestination StockMovement[]    @relation("DestinationWarehouse")
+  stockMovementsOrigin      StockMovement[]    @relation("OriginWarehouse")
+  company                   Company            @relation(fields: [companyId], references: [id])
+  warehouseProduct          WarehouseProduct[]
+}
+
+model WarehouseProduct {
+  warehouseId String
+  productId   String
+  quantity    Int       @default(0)
+  product     Product   @relation(fields: [productId], references: [id])
+  warehouse   WareHouse @relation(fields: [warehouseId], references: [id])
+
+  @@id([warehouseId, productId])
+  @@unique([warehouseId, productId], name: "warehouseId_productId")
+}
+
+model StockMovement {
+  id                     String         @id @default(uuid())
+  type                   MovementType
+  quantity               Int
+  productId              String
+  createdAt              DateTime       @default(now())
+  notes                  String?
+  destinationWarehouseId String?
+  originWarehouseId      String?
+  status                 MovementStatus @default(PENDING)
+  quantityAfter          Int?
+  quantityBefore         Int?
+  companyId              String
+  company                Company        @relation(fields: [companyId], references: [id])
+  destinationWarehouse   WareHouse?     @relation("DestinationWarehouse", fields: [destinationWarehouseId], references: [id])
+  originWareHouse        WareHouse?     @relation("OriginWarehouse", fields: [originWarehouseId], references: [id])
+  product                Product        @relation(fields: [productId], references: [id])
+}
+
+model Supplier {
+  id              String            @id @default(uuid())
+  name            String
+  email           String
+  contactPhone    String
+  description     String?
+  cnpj            String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  deliveryTime    DateTime?
+  companyId       String
+  delivery        Delivery[]
+  products        Product[]
+  company         Company           @relation(fields: [companyId], references: [id])
+  supplierInvoice SupplierInvoice[]
+}
+
+model SupplierInvoice {
+  id                String           @id @default(uuid())
+  title             String
+  description       String
+  amount            Decimal
+  dueDate           DateTime
+  fileUrl           String?
+  status            InvoiceStatus    @default(PENDING)
+  supplierId        String?
+  serviceProviderId String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  companyId         String
+  delivery          Delivery[]
+  service           Service[]
+  company           Company          @relation(fields: [companyId], references: [id])
+  serviceProvider   ServiceProvider? @relation(fields: [serviceProviderId], references: [id])
+  supplier          Supplier?        @relation(fields: [supplierId], references: [id])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String
+  action      String
+  entity      String
+  entityId    String?
+  description String
+  createdAt   DateTime @default(now())
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([entity])
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  createAt  DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  companyId String
+  company   Company   @relation(fields: [companyId], references: [id])
+  products  Product[]
+
+  @@unique([companyId, name])
+}
+
+model Delivery {
+  id                String           @id @default(uuid())
+  productId         String
+  supplierId        String
+  quantity          Int
+  expectedAt        DateTime
+  updatedAt         DateTime         @updatedAt
+  status            DeliveryStatus   @default(PENDING)
+  createdAt         DateTime         @default(now())
+  warehouseId       String
+  supplierInvoiceId String?
+  companyId         String
+  company           Company          @relation(fields: [companyId], references: [id])
+  product           Product          @relation(fields: [productId], references: [id])
+  supplier          Supplier         @relation(fields: [supplierId], references: [id])
+  supplierInvoice   SupplierInvoice? @relation(fields: [supplierInvoiceId], references: [id])
+  warehouse         WareHouse        @relation(fields: [warehouseId], references: [id])
+}
+
+model PasswordResetToken {
+  token     String   @id
+  userId    String   @unique
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  title     String
+  message   String
+  type      NotificationType
+  read      Boolean          @default(false)
+  userId    String
+  createdAt DateTime         @default(now())
+}
+
+model Service {
+  id                String           @id @default(uuid())
+  serviceProviderId String
+  serviceTypeId     String
+  serviceLocationId String
+  serviceDate       DateTime
+  cost              Float
+  status            ServiceStatus    @default(PENDING)
+  description       String?
+  attachmentUrl     String?
+  invoiceId         String?
+  createdByUserId   String
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  companyId         String
+  company           Company          @relation(fields: [companyId], references: [id])
+  createdByUser     User             @relation(fields: [createdByUserId], references: [id])
+  invoice           SupplierInvoice? @relation(fields: [invoiceId], references: [id])
+  location          ServiceLocation  @relation(fields: [serviceLocationId], references: [id])
+  provider          ServiceProvider  @relation(fields: [serviceProviderId], references: [id])
+  type              ServiceType      @relation(fields: [serviceTypeId], references: [id])
+}
+
+model ServiceProvider {
+  id              String            @id @default(uuid())
+  name            String
+  email           String?
+  phone           String?
+  cnpj            String?
+  description     String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  companyId       String
+  services        Service[]
+  company         Company           @relation(fields: [companyId], references: [id])
+  SupplierInvoice SupplierInvoice[]
+}
+
+model ServiceType {
+  id        String    @id @default(uuid())
+  name      String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  companyId String
+  services  Service[]
+  company   Company   @relation(fields: [companyId], references: [id])
+}
+
+model ServiceLocation {
+  id        String    @id @default(uuid())
+  name      String
+  address   String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  companyId String
+  services  Service[]
+  company   Company   @relation(fields: [companyId], references: [id])
+}
+
+enum Office {
+  ADMIN
+  GESTOR
+}
+
+enum MovementType {
+  IN
+  OUT
+  TRANSFER
+}
+
+enum MovementStatus {
+  PENDING
+  COMPLETED
+  CANCELED
+}
+
+enum DeliveryStatus {
+  PENDING
+  COMPLETED
+  CANCELED
+  LATE
+}
+
+enum UsageStatus {
+  IN_STOCK
+  IN_USE
+  CONSUMED
+}
+
+enum InvoiceStatus {
+  PENDING
+  PAID
+  OVERDUE
+  CANCELED
+}
+
+enum UnitType {
+  UNIT
+  KILOGRAM
+  LITER
+  SQUARE_METER
+}
+
+enum NotificationType {
+  SYSTEM
+  WARNING
+  INFO
+  ERROR
+}
+
+enum ServiceStatus {
+  PENDING
+  COMPLETED
+  CANCELED
+}
