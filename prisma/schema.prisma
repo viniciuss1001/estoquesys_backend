@@ -39,7 +39,7 @@ model Session {
 model Company {
   id               String            @id @default(uuid())
   name             String
-  cnpj             String?           @unique
+  cnpj             String           @unique
   corporateName    String?
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
