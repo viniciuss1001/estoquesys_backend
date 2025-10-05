@@ -10,12 +10,17 @@ export class AuthController {
 	) {}
 
 	@Post('register')
-	register(@Body() dto: RegisterDto) {
-		return this.authService.register(dto)
+	async register(@Body() data: RegisterDto) {
+		return this.authService.register(data)
 	}
 
 	@Post('login')
-	login(@Body() dto: LoginDto) {
-		return this.authService.login(dto)
+	async login(@Body() data: LoginDto) {
+		return this.authService.login(data)
+	}
+
+	@Post('logout')
+	async logout() {
+		return this.authService.logout()
 	}
 }
