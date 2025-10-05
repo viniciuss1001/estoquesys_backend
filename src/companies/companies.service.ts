@@ -21,4 +21,15 @@ export class CompaniesService {
 			data
 		});
 	}
+
+	async findByCnpj(cnpj: string) {
+		return this.prisma.company.findUnique({
+			where: {cnpj}, 
+			select: {
+				id: true, 
+				name: true, 
+				cnpj: true
+			}
+		})
+	}
 }

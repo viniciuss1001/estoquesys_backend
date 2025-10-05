@@ -1,4 +1,4 @@
-import { BadRequestException, Body, ConflictException, Controller, InternalServerErrorException, Post } from "@nestjs/common";
+import { BadRequestException, Body, ConflictException, Controller, InternalServerErrorException, NotFoundException, Post } from "@nestjs/common";
 import { CompaniesService } from "./companies.service";
 
 @Controller('companies')
@@ -33,5 +33,25 @@ export class CompaniesController {
 
 				throw new InternalServerErrorException('Erro do servidor ao criar companhia.')
 			}
+	}
+
+	@Post('validate')
+	async validateCompany(@Body() body: {cnpj: string}) {
+		const {cnpj} = body;
+
+		if(!cnpj) throw new BadRequestException("CNPJ é obrigatório.")
+
+		try {
+			const company = await this.companiesService.findByCnpj(cnpj)
+
+			if(!company) throw new NotFoundException('Empresa não encontrada.')
+
+			return company;
+
+		} catch (error) {
+			console.error('Erro ao validar CNPJ:', error)
+
+			throw new InternalServerErrorException("erro interno do servidor.")
+		}
 	}
 }
