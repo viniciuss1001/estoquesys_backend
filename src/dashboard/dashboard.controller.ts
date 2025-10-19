@@ -53,4 +53,20 @@ export class DashboardController {
 	) {
 		return this.dashboardService.getStockMovementHistory(user, days)
 	}
+
+	@Get('total-products')
+	async getTotalProducts(@GetUser() user: SessionUser) {
+		return this.dashboardService.getTotalProducts(user)
+	}
+
+	@Get('total-warehouses')
+	async getTotalWarehouses(@GetUser() user:SessionUser) {
+		return this.dashboardService.getTotalWarehouses(user)
+	}
+
+	@Get('upcoming-deliveries')
+	async getUpcomingDeliveries(@GetUser() user:SessionUser) {
+		return this.dashboardService.getUpcomingDeliveries(user)
+	}
+
 }
