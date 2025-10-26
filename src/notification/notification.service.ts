@@ -1,6 +1,7 @@
-import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import { ForbiddenException, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
 import { SessionUser } from "src/auth/interfaces/session-user.interface";
 import { PrismaService } from "src/prisma/prisma.service";
+import { NotifyByUserRoleParams } from "./interface/notifyByUserRole.interface";
 
 @Injectable()
 export class NotificationService {
@@ -51,5 +52,40 @@ export class NotificationService {
 		}
 
 		return { message: 'Notificação marcada como lida.' }
+	}
+
+	async notifyByRole(params: NotifyByUserRoleParams) {
+		const { title, message, roles, companyId } = params
+
+		try {
+			// search user for role
+			const users = await this.prisma.user.findMany({
+				where: {
+					office: { in: roles },
+					...(companyId && { companyId })
+				}
+			})
+
+			if (!users.length) return
+
+			//create many notifications
+			const notifications = users.map((user) => ({
+				title,
+				message,
+				userId: user.id,
+				read: false
+			}))
+
+			await this.prisma.notification.createMany({
+				data: notifications.map((n) => ({
+					...n,
+					type: "SYSTEM", 
+				})),
+			})
+
+
+		} catch (error) {
+			throw new InternalServerErrorException("Erro ao enviar notificações, ", error)
+		}
 	}
 }
