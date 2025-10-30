@@ -1,6 +1,8 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from "@nestjs/common";
 import { JwtAuthGuard } from "src/auth/guards/jwt-auth.guard";
 import { ProductService } from "./product.service";
+import { CreateProductDto } from "./dto/create-product.dto";
+import { UpdateProductDto } from "./dto/update-product.dto";
 
 
 @Controller('products')
@@ -11,10 +13,10 @@ export class ProductController {
 	) { }
 
 	@Post()
-	async createProduct(@Body() body: any, @Req() req) {
+	async createProduct(@Body() dto: CreateProductDto, @Req() req) {
 		const companyId = req.user;
 		const userId = req.user.id;
-		return this.productsService.createProduct(body, userId, companyId)
+		return this.productsService.createProduct(dto, userId, companyId)
 	}
 
 	@Get()
@@ -42,10 +44,10 @@ export class ProductController {
 	}
 
 	@Patch(':id')
-	async updateProduct(@Param('id') id: string, @Body() body: any, @Req() req) {
+	async updateProduct(@Param('id') id: string, @Body() dto: UpdateProductDto, @Req() req) {
 		const companyId = req.user.companyId;
 		const userId = req.user.id
-		return this.productsService.updateProduct(id, companyId, body, userId)
+		return this.productsService.updateProduct(id, companyId, dto, userId)
 	}
 
 	@Delete(':id')
