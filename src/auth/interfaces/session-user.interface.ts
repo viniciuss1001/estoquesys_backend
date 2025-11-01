@@ -4,4 +4,5 @@ export interface SessionUser {
 	name: string
 	companyId: string
 	role?: string
+	office: "ADMIN" | 'GESTOR'
 }
