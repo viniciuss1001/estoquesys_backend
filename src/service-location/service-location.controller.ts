@@ -13,22 +13,22 @@ export class ServiceLocationController {
 	) { }
 
 	@Post()
-	create(@Body() dto: CreateServiceLocationDto, user: SessionUser) {
+	async create(@Body() dto: CreateServiceLocationDto, user: SessionUser) {
 		return this.serviceLocationService.create(dto, user)
 	}
 
 	@Get()
-	findAll(user: SessionUser) {
+	async findAll(user: SessionUser) {
 		return this.serviceLocationService.findAll(user)
 	}
 
 	@Get('id')
-	findOne(@Param('id') id: string, user: SessionUser) {
+	async findOne(@Param('id') id: string, user: SessionUser) {
 		return this.serviceLocationService.findOne(id, user)
 	}
 
 	@Patch(':id')
-	update(
+	async update(
 		@Param('id') id: string,
 		@Body() dto: UpdateServiceLocationDto,
 		user: SessionUser
@@ -37,7 +37,7 @@ export class ServiceLocationController {
 	}
 
 	@Delete(':id')
-	remove(
+	async remove(
 		@Param('id') id: string,
 		user:SessionUser
 	){
